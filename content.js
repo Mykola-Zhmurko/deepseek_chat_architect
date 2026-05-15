@@ -58,10 +58,7 @@
         chrome.storage.local.get(
           ["dsa_folders", "dsa_chatFolders", "dsa_folderOpen"],
           (r) => {
-            this.folders = r.dsa_folders || [
-              { id: "f1", name: "Work" },
-              { id: "f2", name: "Learn" },
-            ];
+            this.folders = r.dsa_folders || [{ id: "f1", name: "Work" }];
             this.chatFolders = r.dsa_chatFolders || {};
             this.folderOpen = r.dsa_folderOpen || {};
             resolve();
@@ -87,19 +84,18 @@
         <div id="dsa-search-wrap"><input id="dsa-search" type="text" placeholder="🔍 Search..." autocomplete="off" /></div>
         <div id="dsa-body"></div>`;
       this._sidebar.insertBefore(panel, this._sidebar.firstChild);
-      panel
-        .querySelector("#dsa-add")
-        .addEventListener("click", () => this._createFolder());
-      panel.querySelector("#dsa-search").addEventListener("input", (e) => {
+      panel.querySelector("#dsa-add").onclick = () => this._createFolder();
+      panel.querySelector("#dsa-search").oninput = (e) => {
         this.query = e.target.value.toLowerCase();
         this._render();
-      });
+      };
       this._render();
     }
 
     _render() {
       const body = document.getElementById("dsa-body");
       if (!body) return;
+
       const allLinks = Array.from(
         this._sidebar.querySelectorAll(CHAT_LINK_SEL),
       ).filter((a) => !a.closest("#dsa-panel"));
@@ -112,11 +108,13 @@
       let html = "";
       this.folders.forEach((folder) => {
         const chatsInFolder = Array.from(chatMap.entries()).filter(
-          ([id, data]) =>
-            this.chatFolders[id] === folder.id &&
-            (!this.query || data.text.includes(this.query)),
+          ([id]) => this.chatFolders[id] === folder.id,
+        );
+        const filteredChats = chatsInFolder.filter(
+          ([, data]) => !this.query || data.text.includes(this.query),
         );
         const open = this.folderOpen[folder.id] !== false;
+
         html += `
           <div class="dsa-folder">
             <div class="dsa-folder-header" data-folder-id="${folder.id}">
@@ -129,7 +127,7 @@
               </span>
             </div>
             <div class="dsa-folder-body ${open ? "" : "dsa-closed"}" data-drop-folder="${folder.id}">
-              ${chatsInFolder.map(([id, data]) => this._chatChip(id, data.el)).join("") || '<div class="dsa-empty">Drag chats here</div>'}
+              ${filteredChats.map(([id, data]) => this._chatChip(id, data.el)).join("") || '<div class="dsa-empty">Drag chats here</div>'}
             </div>
           </div>`;
       });
@@ -146,60 +144,64 @@
     }
 
     _bindBodyEvents(body) {
+      // 1. Ordner auf/zu
       body.querySelectorAll(".dsa-folder-header").forEach((h) => {
-        h.addEventListener("click", (e) => {
+        h.onclick = (e) => {
           if (e.target.closest("button")) return;
           const fid = h.getAttribute("data-folder-id");
-          this.folderOpen[fid] = !this.folderOpen[fid];
+          this.folderOpen[fid] = this.folderOpen[fid] === false;
           this._save();
           this._render();
-        });
+        };
       });
-      body
-        .querySelectorAll(".dsa-btn-rename")
-        .forEach((b) =>
-          b.addEventListener("click", () =>
-            this._renameFolder(b.dataset.folderId),
-          ),
-        );
-      body
-        .querySelectorAll(".dsa-btn-delete")
-        .forEach((b) =>
-          b.addEventListener("click", () =>
-            this._deleteFolder(b.dataset.folderId),
-          ),
-        );
-      body.querySelectorAll(".dsa-chip-remove").forEach((b) =>
-        b.addEventListener("click", () => {
+
+      // 2. Chat entfernen (X)
+      body.querySelectorAll(".dsa-chip-remove").forEach((b) => {
+        b.onclick = (e) => {
+          e.stopPropagation();
           delete this.chatFolders[b.dataset.chatId];
           this._save();
           this._render();
-        }),
-      );
+        };
+      });
+
+      // 3. Rename & Delete
+      body
+        .querySelectorAll(".dsa-btn-rename")
+        .forEach(
+          (b) => (b.onclick = () => this._renameFolder(b.dataset.folderId)),
+        );
+      body
+        .querySelectorAll(".dsa-btn-delete")
+        .forEach(
+          (b) => (b.onclick = () => this._deleteFolder(b.dataset.folderId)),
+        );
+
+      // 4. Drag & Drop Logik
       body.querySelectorAll(".dsa-folder-body").forEach((zone) => {
-        zone.addEventListener("dragover", (e) => e.preventDefault());
-        zone.addEventListener("drop", (e) => {
+        zone.ondragover = (e) => e.preventDefault();
+        zone.ondrop = (e) => {
+          e.preventDefault();
           if (this.dragChatId) {
             this.chatFolders[this.dragChatId] = zone.dataset.dropFolder;
             this.dragChatId = null;
             this._save();
             this._render();
           }
-        });
+        };
       });
+
       body.querySelectorAll(".dsa-chat-chip").forEach((chip) => {
-        chip.addEventListener(
-          "dragstart",
-          () => (this.dragChatId = chip.dataset.chatId),
-        );
-        chip.addEventListener("click", (e) => {
-          if (!e.target.closest("button")) {
-            const a = this._sidebar.querySelector(
-              `a[href="/a/chat/${chip.dataset.chatId}"]`,
-            );
-            if (a) a.click();
-          }
-        });
+        chip.ondragstart = () => {
+          this.dragChatId = chip.dataset.chatId;
+        };
+        chip.onclick = (e) => {
+          if (e.target.closest("button")) return;
+          const a = this._sidebar.querySelector(
+            `a[href="/a/chat/${chip.dataset.chatId}"]`,
+          );
+          if (a) a.click();
+        };
       });
     }
 
@@ -207,7 +209,9 @@
       this._sidebar.querySelectorAll(CHAT_LINK_SEL).forEach((a) => {
         if (a.closest("#dsa-panel")) return;
         a.setAttribute("draggable", "true");
-        a.addEventListener("dragstart", () => (this.dragChatId = getChatId(a)));
+        a.ondragstart = () => {
+          this.dragChatId = getChatId(a);
+        };
       });
     }
 
@@ -231,7 +235,7 @@
     }
 
     _deleteFolder(fid) {
-      if (confirm("Delete?")) {
+      if (confirm("Delete folder?")) {
         this.folders = this.folders.filter((x) => x.id !== fid);
         Object.keys(this.chatFolders).forEach((k) => {
           if (this.chatFolders[k] === fid) delete this.chatFolders[k];
