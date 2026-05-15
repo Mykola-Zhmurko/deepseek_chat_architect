@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "DeepSeek Chat Architect",
-  "version": "2.0.0",
-  "description": "Organise your DeepSeek chats into folders - drag & drop, search, import/export.",
+  "version": "2.0.1",
+  "description": "Organise your DeepSeek chats into folders with drag & drop and search.",
   "permissions": ["storage"],
   "content_scripts": [
     {
