@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "DeepSeek Chat Architect",
+  "version": "2.0.0",
+  "description": "Organise your DeepSeek chats into folders - drag & drop, search, import/export.",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://chat.deepseek.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    }
+  ]
+}
