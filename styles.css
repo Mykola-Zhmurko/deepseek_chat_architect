@@ -255,36 +255,6 @@
   text-align: center;
 }
 
-/* ── Footer ── */
-#dsa-footer {
-  display: flex;
-  gap: 6px;
-  padding: 8px 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-#dsa-export,
-#dsa-import {
-  flex: 1;
-  padding: 5px 8px;
-  font-size: 11px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-  text-align: center;
-}
-#dsa-export:hover,
-#dsa-import:hover {
-  background: rgba(74, 124, 246, 0.2);
-  color: #90b4ff;
-  border-color: #4a7cf6;
-}
-
 /* ── Context Menu ── */
 #dsa-ctx {
   position: fixed;

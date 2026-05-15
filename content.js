@@ -77,7 +77,6 @@
       }
       this._retries = 0;
       this._sidebar = sidebar;
-      this._mount();
     }
 
     // ── Storage ──────────────────────────────────────────────────────────────
@@ -108,45 +107,6 @@
     }
 
     // ── Inject Panel ─────────────────────────────────────────────────────────
-    _mount() {
-      if (this._panelMounted || document.getElementById("dsa-panel")) return;
-
-      const panel = document.createElement("div");
-      panel.id = "dsa-panel";
-      panel.innerHTML = `
-        <div id="dsa-header">
-          <span id="dsa-title">📂 Folders</span>
-          <button id="dsa-add" title="New folder">＋</button>
-        </div>
-        <div id="dsa-search-wrap">
-          <input id="dsa-search" type="text" placeholder="🔍 Search…" autocomplete="off" />
-        </div>
-        <div id="dsa-body"></div>
-        <div id="dsa-footer">
-          <button id="dsa-export" title="Export">📤 Export</button>
-          <button id="dsa-import" title="Import">📥 Import</button>
-        </div>`;
-
-      this._sidebar.insertBefore(panel, this._sidebar.firstChild);
-      this._panelMounted = true;
-
-      panel
-        .querySelector("#dsa-add")
-        .addEventListener("click", () => this._createFolder());
-      panel.querySelector("#dsa-search").addEventListener("input", (e) => {
-        this.query = e.target.value.toLowerCase();
-        this._render();
-      });
-      panel
-        .querySelector("#dsa-export")
-        .addEventListener("click", () => this._export());
-      panel
-        .querySelector("#dsa-import")
-        .addEventListener("click", () => this._import());
-
-      this._render();
-      this._ensureSidebarLinksDraggable(); // initial pass
-    }
 
     // ── Make native sidebar links draggable & add context menu (handles dynamic loading) ──
     _ensureSidebarLinksDraggable() {
@@ -458,52 +418,6 @@
           this._render();
         }
       }
-    }
-
-    // ── Import / Export ───────────────────────────────────────────────────────
-    _export() {
-      const data = {
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        folders: this.folders,
-        chatFolders: this.chatFolders,
-        folderOpen: this.folderOpen,
-      };
-      const blob = new Blob([JSON.stringify(data, null, 2)], {
-        type: "application/json",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `deepseek-architect-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    _import() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".json,application/json";
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-          try {
-            const data = JSON.parse(ev.target.result);
-            if (data.folders) this.folders = data.folders;
-            if (data.chatFolders) this.chatFolders = data.chatFolders;
-            if (data.folderOpen) this.folderOpen = data.folderOpen;
-            this._save();
-            this._render();
-            alert("✅ Import successful!");
-          } catch {
-            alert("❌ Error: Invalid file.");
-          }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
     }
 
     _esc(str) {
